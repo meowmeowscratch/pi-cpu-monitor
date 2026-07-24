@@ -29,9 +29,11 @@ import time
 # CPU, memory, and disk -- like a health check-up for your Pi
 import psutil
 # Meow: the main class from the meow meow scratch SDK that sends data
-# MeowError: the error type that Meow raises when something goes wrong
-#   (e.g., bad API key, no internet connection)
-from meow_sdk import Meow, MeowError
+# MeowError: the general error Meow raises when something goes wrong
+#   (e.g., no internet connection, server problem)
+# AuthError: a more specific error meaning your API key was rejected
+# RateLimitError: a more specific error meaning you're sending too fast
+from meow_sdk import Meow, MeowError, AuthError, RateLimitError
 
 # --- Configuration ---
 
@@ -132,11 +134,25 @@ def main():
                 f"Mem: {stats['memory_percent']}% | "
                 f"Disk: {stats['disk_percent']}%"
             )
+        except AuthError as e:
+            # A rejected key can't fix itself, so stop instead of printing the
+            # same error every 60 seconds forever.
+            print(f"API key rejected: {e}")
+            if e.hint:
+                print(f"Hint: {e.hint}")
+            sys.exit(1)
+        except RateLimitError as e:
+            # Sending faster than your plan allows -- wait it out.
+            print(f"Rate limited: {e}")
+            time.sleep(60)
         except MeowError as e:
-            # If sending fails (bad API key, no internet, server down, etc.),
-            # we catch the error, print a message, and keep going. The script
-            # doesn't crash -- it will try again on the next cycle.
+            # Any other send failure (no internet, server down, etc.). We catch
+            # it, print a message, and keep going -- the script doesn't crash,
+            # it just tries again on the next cycle.
             print(f"Send failed: {e}")
+            # .hint is a plain-English suggestion from the API, when it has one.
+            if e.hint:
+                print(f"Hint: {e.hint}")
 
         # Step 3: SLEEP -- wait 60 seconds before the next reading.
         # This keeps us from flooding the API with too many requests.

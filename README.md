@@ -81,6 +81,8 @@ export MEOW_API_KEY="your-key"
 
 > **What does `export` do?** It creates a temporary variable in your terminal session. The script reads this variable when it starts. If you close your terminal and open a new one, you'll need to run this command again.
 
+> **Which kind of key should you use?** Your account offers two. A **platform token** works across every app you own. An **app API key** works for one app only. For a Pi that sits running for days, use an **app API key** — if it ever leaks, only this one app is affected, not your whole account. You'll find both in your account settings.
+
 ### 5. Run the monitor
 
 ```bash
